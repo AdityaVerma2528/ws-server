@@ -1,4 +1,4 @@
-// index.ts
+
 import express, { Request, Response } from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -19,11 +19,6 @@ app.get("/", (req: Request, res: Response) => {
 
 io.on("connection", (socket) => {
     console.log("The new user is connected", socket.id); 
-
-    socket.on("message", (data: string) => {
-        console.log(data); 
-        io.emit("broadcastMsg", data); 
-    })
 
     socket.on("disconnect", () => {
         console.log("A user disconnected", socket.id); 
