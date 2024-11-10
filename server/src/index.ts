@@ -17,13 +17,52 @@ app.get("/", (req: Request, res: Response) => {
     res.send("WebSocket server is running");
 });
 
-io.on("connection", (socket) => {
-    console.log("The new user is connected", socket.id); 
+interface Rooms {
+    [roomId: string]: string[];
+}
 
-    socket.on("disconnect", () => {
-        console.log("A user disconnected", socket.id); 
-    })
-})
+const rooms: Rooms = {}; 
+
+io.on("connection", (socket) => {
+    // Creates room
+    socket.on("createRoom", (roomId: string) => {
+        if (!rooms[roomId]) {
+            rooms[roomId] = []; 
+            rooms[roomId].push(socket.id); 
+            socket.join(roomId);
+            console.log("user created room : ", roomId); 
+        } else {
+            socket.emit("error", `Room ${roomId} already exists`);
+        }
+    });
+
+    // Joins in the existing room
+    socket.on("joinRoom", (roomId: string) => {
+        if (rooms[roomId]) {
+            rooms[roomId].push(socket.id);
+            socket.join(roomId);
+            console.log("user joined room : ", roomId);
+        } else {
+            socket.emit("error", `Room ${roomId} does not exist`);
+        }
+    });
+
+    // Disconnects the users from the room
+    socket.on("disconnect", (reason: string) => {
+        for(const roomId in rooms) {
+            const index: number = rooms[roomId].indexOf(socket.id); 
+            if (index !== -1) {
+                rooms[roomId].splice(index, 1);
+                if (rooms[roomId].length === 0) {
+                    delete rooms[roomId]; 
+                }
+
+                console.log("User left the room"); 
+                break;
+            }
+        }
+    });
+});
 
 const PORT = 4000;
 
